@@ -48,7 +48,7 @@ The Apartment node requires no external wiring other than a standard USB-C cable
 --- 
 
 
-## 🚀 Installation & Flashing
+## Installation & Flashing
 1. Add the `roof-node.yaml` and `apartment-node.yaml` files to your **Home Assistant ESPHome Add-on**.
 2. Flash the **Apartment Node** first. 
 3. Flash the **Roof Node** via USB (Ensure you remove the deep sleep block temporarily if you want to read USB logs).
