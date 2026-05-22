@@ -1,0 +1,119 @@
+esphome:
+  name: apartment-node
+  on_boot:
+    priority: -100
+    then:
+      - output.turn_on: vext_output  
+
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: arduino
+
+logger:
+
+# Keep Wi-Fi connected to Home Assistant
+wifi:
+  ssid: "SomeSSID"
+  password: "SomePassword"
+
+api:
+
+# Fixed OTA Syntax
+ota: 
+  - platform: esphome
+
+# Download Google Fonts for the Display
+font:
+  - file: "gfonts://Roboto"
+    id: font_small
+    size: 12
+  - file: "gfonts://Roboto"
+    id: font_large
+    size: 28
+
+# LoRa SPI Pins for Heltec V3
+spi:
+  clk_pin: GPIO9
+  mosi_pin: GPIO10
+  miso_pin: GPIO11
+
+# LoRa Radio Configuration for Heltec V3
+sx126x:
+  dio1_pin: GPIO14
+  cs_pin: GPIO8
+  busy_pin: GPIO13
+  rst_pin: GPIO12
+  bandwidth: 125_0kHz
+  crc_enable: true
+  frequency: 868.0MHz
+  modulation: LORA
+  hw_version: sx1262
+  rf_switch: true
+  tcxo_voltage: 1_8V # Wakes up the LoRa antenna crystal!
+  sync_value: [0x14, 0x24] # Must match the roof exactly!
+
+# Receive LoRa Packets
+packet_transport:
+  - platform: sx126x
+
+# Screen Power Pin
+output:
+  - platform: gpio
+    pin: GPIO36 # This is the Vext Control pin on the V3
+    id: vext_output
+
+# Catch the Data and send it to Home Assistant & Screen
+sensor:
+  - platform: packet_transport
+    provider: roof-node
+    remote_id: water_temp
+    id: local_water_temp
+    name: "Roof Water Temp"
+    unit_of_measurement: "°C"
+    internal: false
+
+  - platform: packet_transport
+    provider: roof-node
+    remote_id: battery_voltage
+    id: local_battery_voltage
+    name: "Roof Battery"
+    unit_of_measurement: "V"
+    internal: false
+
+# Heltec V3 Screen I2C Pins
+i2c:
+  sda: GPIO17
+  scl: GPIO18
+
+# Draw the User Interface
+display:
+  - platform: ssd1306_i2c
+    model: "SSD1306 128x64"
+    reset_pin: GPIO21
+    address: 0x3C
+    lambda: |-
+      // UI Layout
+      it.rectangle(0, 0, 128, 64);
+      it.print(64, 4, id(font_small), TextAlign::TOP_CENTER, "SOLAR HEATER");
+      it.line(0, 20, 128, 20);
+      
+      // Thermometer Icon
+      it.circle(20, 30, 4);
+      it.line(16, 30, 16, 45);
+      it.line(24, 30, 24, 45);
+      it.circle(20, 50, 7);
+      it.filled_circle(20, 50, 4);
+      it.filled_rectangle(18, 38, 5, 12);
+
+      // Print Temperature
+      if (id(local_water_temp).has_state()) {
+        it.printf(38, 26, id(font_large), TextAlign::TOP_LEFT, "%.1f°C", id(local_water_temp).state);
+      } else {
+        it.print(38, 26, id(font_large), TextAlign::TOP_LEFT, "--.-°C");
+      }
+
+      // Print Battery in Top Right
+      if (id(local_battery_voltage).has_state()) {
+        it.printf(126, 4, id(font_small), TextAlign::TOP_RIGHT, "%.1fV", id(local_battery_voltage).state);
+      }
