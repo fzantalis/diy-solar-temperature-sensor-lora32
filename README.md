@@ -8,7 +8,7 @@ This project solves the problem of having no Wi-Fi or mains power on a rooftop.
 * **The Roof Node** is completely off-grid. It wakes up every 5 minutes, reads the water temperature and battery voltage, broadcasts it via LoRa, and goes back to deep sleep. It is powered by an 18650 battery and kept charged by a small solar panel.
 * **The Apartment Node** sits indoors powered by USB. It listens for the LoRa packets, displays the live data on its built-in OLED screen, and forwards the data to Home Assistant over Wi-Fi.
 
-## 🛠️ Hardware Requirements
+## Hardware Requirements
 * 2x **Heltec WiFi LoRa 32 V3** (ESP32-S3)
 * 1x **DS18B20** Waterproof Temperature Sensor
 * 1x **4.7kΩ Resistor** (for the DS18B20 data line)
