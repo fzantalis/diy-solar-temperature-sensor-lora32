@@ -1,0 +1,73 @@
+esphome:
+  name: roof-node
+
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: arduino
+
+logger:
+
+# We remove all Wi-Fi features to guarantee maximum battery life
+wifi: !remove
+captive_portal: !remove
+web_server: !remove
+api: !remove
+ota: !remove
+
+# Wakes up for 15 seconds, sleeps for 5 minutes
+deep_sleep:
+  run_duration: 15s
+  sleep_duration: 5min
+
+# LoRa SPI Pins for Heltec V3
+spi:
+  clk_pin: GPIO9
+  mosi_pin: GPIO10
+  miso_pin: GPIO11
+
+# LoRa Radio Configuration for Heltec V3
+sx126x:
+  dio1_pin: GPIO14
+  cs_pin: GPIO8
+  busy_pin: GPIO13
+  rst_pin: GPIO12
+  bandwidth: 125_0kHz
+  crc_enable: true
+  frequency: 868.0MHz # Standard European LoRa Frequency
+  modulation: LORA
+  hw_version: sx1262
+  rf_switch: true
+  tcxo_voltage: 1_8V # Wakes up the LoRa antenna crystal!
+  sync_value: [0x14, 0x24] # Secure network sync word
+
+# Broadcast the sensor data over LoRa
+packet_transport:
+  - platform: sx126x
+    update_interval: 5s # Forces broadcast before deep sleep cuts the power!
+    sensors:
+      - water_temp
+      - battery_voltage
+
+# Temperature Sensor Input
+one_wire:
+  - platform: gpio
+    pin: GPIO7 # Custom pin for the V3 board 
+
+sensor:
+  # Dallas Temperature Probe
+  - platform: dallas_temp
+    index: 0
+    name: "Solar Water Temperature"
+    id: water_temp
+    update_interval: 5s 
+
+  # Internal Battery Voltage Monitor
+  - platform: adc
+    pin: GPIO1 # ADC1_CH0 reads the lithium battery voltage
+    name: "Roof Battery Voltage"
+    id: battery_voltage
+    update_interval: 5s
+    attenuation: 11db
+    filters:
+      - multiply: 4.9 # calculated from datasheet: 100/(100+390)
